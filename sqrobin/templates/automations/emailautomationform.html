@@ -1,0 +1,67 @@
+{% load static %}
+{% load crispy_forms_tags %}
+
+
+<div class='modal-dialog modal-lg'>
+  <div class='modal-content'>
+    {% if instance %}
+    <form method="post" class='automation-form' action="{% url 'automations:emailautomationform' %}?instance={{instance.id}}">
+    <input type='hidden' id='form_friendly_recipients' value='{{instance.recipients_to_form_friendly_string}}'>
+    {% else %}
+    <form method="post" class='automation-form' action="{% url 'automations:emailautomationform' %}">
+    {% endif %}
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">×</button>
+        {% if instance %}
+        <h3>Editing Automation: {{instance.label}}</h3>
+        {% else %}
+        <h3>Add Automation</h3>
+        {% endif %}
+      </div>
+      <div class="modal-body">
+           {% csrf_token %}
+           {{ form|crispy }}
+           <input type='hidden' id='request_url' name='request_url' value=''>
+      </div>
+      <div class="modal-footer">
+           <button type='submit' class='btn btn-primary'>Save</button>
+           <button type='button' class='btn btn-default' data-dismiss='modal'>Close</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+{% if instance and not form.errors %}
+<script type='text/javascript'>
+var recipientString = document.getElementById("form_friendly_recipients").value;
+$("#id_recipients").val(recipientString);
+</script>
+{% endif %}
+
+<script type='text/javascript'>
+var url = window.location.href
+$("#request_url").val(url); //this grabs the current leadlist URL so we can preserve page numbers
+
+  $(".automation-form").on('submit', function(e) {
+    e.preventDefault() //prevent submission; send via ajax instead
+    $.ajax({
+      type: $(this).attr('method'),
+      url: this.action,
+      data: $(this).serialize(),
+      context: this,
+      success: function(data, status) { //data is a full HTML response; either leadlist view or form w/errors
+        console.log(data); 
+        if ( $(data).find('.has-error').length > 0 ){
+          $('#emailAutomationFormModal').html(data); //if errors, re-render form inside modal with errors displayed
+        } else {
+          $('#emailAutomationFormModal').modal('toggle'); //if no errors, clear all content and write data to document
+          document.open();
+          document.write(data);
+          document.close(); //TODO: test this in IE, FF, mobile
+        }
+      },
+    });
+    return false;
+  });
+</script>

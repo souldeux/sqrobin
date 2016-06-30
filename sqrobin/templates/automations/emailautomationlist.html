@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block body %}
+
+<h1>Email Automation List: Placeholder</h1>
+<a class='add-link' href="#" data-form="{% url 'automations:emailautomationform' %}">Add Automation</a>
+<!--lead list -->
+<div class='container-fluid'>
+	<div class='table-responsive'>
+		<table class="table table-hover table-condensed">
+			<thead>
+				<tr>
+					<th>Label</th>
+					<th>Invocation Key</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for automation in automations %}
+				<tr data-toggle='collapse' data-target='#accordion{{automation.id}}' class='clickable'>
+					<td>{{automation.label}}</td>
+					<td>{{automation.invocation_key}}</td>
+				</tr>
+				<tr>
+					<td colspan='12' style='padding:0px'>
+						<div id='accordion{{automation.id}}' class='collapse'>
+							
+							<div class='container-fluid' style='padding-top:10px'>
+							<a class='edit-link' href="#" data-form="{% url 'automations:emailautomationform' %}?instance={{automation.id}}">Edit Email Automation</a>
+								<dl class="dl-horizontal">
+
+									<dt>Label</dt>
+									<dd>{{automation.label}}</dd>
+
+									<dt>Invocation Key</dt>
+									<dd>{{automation.invocation_key}}</dd>
+
+									<dt>Recipients</dt>
+									{% for key, value in automation.recipients_to_dict.items %}
+									<dd>{{key}}, {{value}}</dd>
+									{% endfor %}
+
+									<dt>Sender Email</dt>
+									<dd>{{automation.sender_email}}</dd>
+
+									<dt>Subject</dt>
+									<dd>{{automation.subject}}</dd>
+
+									<dt>Body</dt>
+									<dd>{{automation.body}}</dd>
+
+								</dl>
+							</div>
+
+						</div>
+					</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+</div>
+<!--end lead list -->
+
+<!--pagination-->
+<div class='pagination'>
+	<span class='step-links'>
+		{% if automations.has_previous %}
+			<a href="?page={{ automations.previous_page_number }}">previous</a>
+		{% endif %}
+
+		<span class='current'>
+			Page {{ automations.number }} of {{ automations.paginator.num_pages }}
+		</span>
+
+		{% if automations.has_next %}
+			<a href="?page={{ automations.next_page_number }}">next</a>
+		{% endif %}
+	</span>
+</div>
+<!--end pagination-->
+
+<!--we fill this modal with Email Automation Form stuff when it's appropriate-->
+<div class='modal fade' tabindex="-1" role="dialog" id='emailAutomationFormModal' style='display:none;'>
+</div>
+
+<script type='text/javascript'>
+	$(".edit-link, .add-link").click(function(ev){ //for each edit link
+		ev.preventDefault(); //prevent navigation
+		var url = $(this).data("form"); //get contact form url from data-form attribute
+		$("#emailAutomationFormModal").load(url, function() { //load the emailautomationform url into the modal
+			$(this).modal('show'); //use success callback to show modal
+		});
+		return false; //prevent click propogation
+	});
+</script>
+
+{% endblock body %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
