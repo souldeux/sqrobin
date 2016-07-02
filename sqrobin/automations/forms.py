@@ -25,7 +25,6 @@ class EmailAutomationForm(forms.ModelForm):
 		for the right-hand side. Then, stuff things into the processed_data dict. Then, json.dumps and return
 		"""
 		newline_split = [line for line in clean_data.split('\r\n') if line]
-		print newline_split
 		for pair in newline_split:
 			split_pair = pair.split("::")
 			try:

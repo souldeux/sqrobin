@@ -2,13 +2,16 @@ from leads.models import Lead
 from automations.models import EmailAutomation, PostAutomation
 from profiles.models import Distributor
 
+
+
 def generate_leads(number_to_generate):
 	"""
 	Generates a given number of leads with static attributes
 	"""
+	d = Distributor.objects.get(id=1)
 	for i in xrange(0, number_to_generate):
 		l = Lead.objects.create(
-			distributor = Distributor.objects.get(id=1),
+			distributor = d,
 			first_name = "John",
 			last_name = str(i+1),
 			home_phone = "555-555-5555",

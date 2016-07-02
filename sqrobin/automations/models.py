@@ -2,6 +2,7 @@ from django.db import models
 import json
 import uuid
 from profiles.models import Distributor
+import requests
 
 """
 An Automation is a "template" for an Action. It describes how incoming data (about email
@@ -71,7 +72,7 @@ class PostAutomation(models.Model):
 	endpoint = models.URLField()
 
 	#json dict of local data to send and what name to send it under (ie., data stored on the lead field)
-	#Stored like LocalName:ForeignName. For instance, the pair first_name:fname would mean "for any given"
+	#For instance, the pair first_name:fname would mean "for any given"
 	#lead, send its "first_name" value under the label "fname"
 	lead_data = models.TextField()
 
@@ -83,8 +84,19 @@ class PostAutomation(models.Model):
 	def run(self, lead, **kwargs):
 		#Formats data for a given lead and fires according to the parameters set on the model
 		#returns status; does NOT create or update Action model
-		print "Running PostAutomation %s for %r" % (self.invocation_key, lead)
-		return "<Status:201>"
+
+		data = {}
+		#Construct lead data to send
+		for local_name, sending_label in json.loads(self.lead_data).items():
+			data[sending_label] = getattr(lead, local_name)
+
+		#Construct custom data to send
+		for label, value in json.loads(self.custom_data).items():
+			data[label] = value
+
+		return requests.post(self.endpoint, data=data)
+
+
 
 	def lead_data_to_dict(self):
 		return json.loads(self.lead_data)
@@ -138,7 +150,7 @@ class EmailAction(models.Model):
 		unique_together = ('automation', 'lead')
 
 	def __unicode__(self):
-		return self.automation.label, self.status
+		return "{} for {} {}: {}".format(self.automation.label, self.lead.first_name, self.lead.last_name, self.status)
 
 class PostAction(models.Model):
 	automation = models.ForeignKey(PostAutomation)
@@ -153,4 +165,4 @@ class PostAction(models.Model):
 		unique_together = ('automation', 'lead')
 
 	def __unicode__(self):
-		return self.automation.label, self.status
+		return "{} for {} {}: {}".format(self.automation.label, self.lead.first_name, self.lead.last_name, self.status)
