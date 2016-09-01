@@ -27,15 +27,53 @@
 						<div id='accordion{{lead.id}}' class='collapse'>
 							
 							<div class='container-fluid' style='padding-top:10px'>
-							<a class='edit-link' href="#" data-form="{% url 'leads:leadform' %}?instance={{lead.id}}">Edit Lead</a>
-								<dl class="dl-horizontal">
-								{% for field, value in lead.get_fields %}
-									{% if value %}
-										<dt>{{field}}</dt>
-										<dd>{{value}}</dd>
-									{% endif %}
-								{% endfor %}
-								</dl>
+							<div class='col-sm-6'>
+								<a class='edit-link' href="#" data-form="{% url 'leads:leadform' %}?instance={{lead.id}}">Edit Lead</a>
+									<dl class="dl-horizontal">
+									{% for field, value in lead.get_fields %}
+										{% if value %}
+											<dt>{{field}}</dt>
+											<dd>{{value}}</dd>
+										{% endif %}
+									{% endfor %}
+									</dl>
+							</div>
+
+							<div class='col-sm-6'>
+								{% if lead.postaction_set.exists %}
+								<h5>Post Automations</h5>
+								<hr>
+                                <dl class='dl-horizontal'>
+                                	{% for p in lead.postaction_set.all %}
+                                        <dt>{{p.automation.label}}</dt>
+                                        <dd>{% if p.status == "<Response [200]>" %}
+                                        		<span class='text-success'>
+                                        	{% else %}
+                                        		<span class='text-danger'>
+                                        	{% endif %}
+                                        	 	{{p.status}} {{p.last_modified}}
+                                        </dd>
+                                	{% endfor %}
+                            	</dl>
+                            	{% endif %}
+
+                            	{% if lead.emailaction_set.exists %}
+                            	<h5>Email Automations</h5>
+                            	<hr>
+                                <dl class='dl-horizontal'>
+                                	{% for e in lead.emailaction_set.all %}
+                                        <dt>{{e.automation.label}}</dt>
+                                        <dd>{% if e.status == "<Success: Email Created & Sent>" %}
+                                        		<span class='text-success'>
+                                        	{% else %}
+                                        		<span class='text-danger'>
+                                        	{% endif %}
+                                        	 	{{e.status}} {{e.last_modified}}
+                                        </dd>
+                                	{% endfor %}
+                            	</dl>
+                            	{% endif %}
+                            </div>
 							</div>
 
 						</div>

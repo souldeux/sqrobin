@@ -66,6 +66,7 @@ class PostAutomationForm(forms.ModelForm):
 		processed_data = {}
 
 		valid_local_names = [
+							'created_on',
 							'first_name',
 							'last_name',
 							'home_phone',

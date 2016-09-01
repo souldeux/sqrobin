@@ -3,6 +3,7 @@ import json
 import uuid
 from profiles.models import Distributor
 import requests
+import sendgrid
 
 """
 An Automation is a "template" for an Action. It describes how incoming data (about email
@@ -39,10 +40,74 @@ class EmailAutomation(models.Model):
 	label = models.CharField(max_length=150)
 
 	def run(self, lead, **kwargs):
-		#formats data for a given lead and sends emails according to the parameters set on the model
-		#returns status; does NOT create or update Action model
-		print "Running EmailAutomation %s for %r" % (self.invocation_key, lead)
-		return "<Status: Queued>"
+		"""
+		formats data for a given lead and sends emails according to the parameters set on the model
+		returns status; does NOT create or update Action model
+
+		construct a "merge dict" of variables used to format the text body like:
+			"::FIRSTNAME::" : lead.first_name
+
+		iterate over keys in merge dict, replace instances in email subject & body with values
+		"""
+		merge_dict = {
+			"::FIRSTNAME::" : lead.first_name,
+			"::LASTNAME::": lead.last_name,
+			"::HOMEPHONE::": lead.home_phone,
+			"::CELLPHONE::": lead.cell_phone,
+			"::BUSINESSPHONE::": lead.business_phone,
+			"::EMAIL::": lead.email,
+			"::PERSONALADDRESS::": lead.personal_address,
+			"::PERSONALADDRESS2::": lead.personal_address_2,
+			"::PERSONALCITY::": lead.personal_city,
+			"::PERSONALSTATE::": lead.personal_state,
+			"::PERSONALZIP::": lead.personal_zip,
+			"::BUSINESSADDRESS::": lead.business_address,
+			"::BUSINESSADDRESS2::": lead.business_address_2,
+			"::BUSINESSCITY::": lead.business_city,
+			"::BUSINESSSTATE::": lead.business_state,
+			"::BUSINESSZIP::": lead.business_zip,
+			"::FAXNUMBER::": lead.fax_number,
+			"::INDUSTRY::": lead.industry,
+			"::POSITION::": lead.position,
+			"::WEBSITE::": lead.website,
+			"::DOB::": lead.dob,
+			"::COMMENTS::": lead.comments,
+			"::REFERRAL::": lead.referral,
+			"::NOTES::": lead.notes,
+			"::CREATEDON::": str(lead.created_on) 
+		}
+		#format both body and subject; don't work directly on self.body/self.subject
+		formatted_body = self.body
+		formatted_subject = self.subject
+		for key, value in merge_dict.items():
+			if key in formatted_body:
+				formatted_body = formatted_body.replace(key, value)
+			if key in formatted_subject:
+				formatted_subject = formatted_subject.replace(key, value)
+
+
+		#create sendgrid message object & auth thing
+		key = "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" #TODO: swap account
+		sg = sendgrid.SendGridClient(key)
+		message = sendgrid.Mail()
+		
+		#format recipients and add to message
+		recipients = self.recipients_to_dict()
+		for name, email in recipients.items():
+			r = "{} <{}>".format(name, email)
+			message.add_to(r)
+
+		message.set_subject(formatted_subject)
+		message.set_text(formatted_body) #plain text emails only for now
+		message.set_from(self.sender_email)
+
+		status, msg = sg.send(message)
+		#return something that can be used as the "status" attribue of the associated action
+		print status, msg
+		if status == 200:
+			return "<Success: Email Created & Sent>"
+		else:
+			return "<Error: Undefined Error (status: {})>".format(status)
 
 	def recipients_to_dict(self):
 		return json.loads(self.recipients)

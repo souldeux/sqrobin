@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
 from leads.models import Lead
@@ -12,6 +13,7 @@ from automations.models import EmailAutomation, PostAutomation
 
 #TODO: Permission Decorators
 
+@login_required(login_url='/login/')
 def lead_list_view(request):
 	#Returns a list of all Lead objects belonging to a requesting user
 	lead_list = Lead.objects.filter(distributor=request.user.distributor)
@@ -31,7 +33,7 @@ def lead_list_view(request):
 
 	return render(request, "leads/leadlist.html", {'leads':leads})
 
-
+@login_required(login_url='/login/')
 def lead_create_edit_view(request):
 	#Displays a ModelForm for a Lead object; if an "instance" is passed via the url, that 
 	#instance is loaded into the ModelForm for editing
@@ -66,6 +68,72 @@ def lead_create_edit_view(request):
 	return render(request, "leads/leadform.html", {'form':form, 'instance':instance})
 
 
+def state_to_abbreviation(state_name):
+	#Gravity Forms posts full state names; convert to 2-letter abbreviation
+	if not state_name:
+		return ''
+
+	state_dict = {
+		"Alabama": "AL",
+		"Alaska": "AK",
+		"Arizona": "AZ",
+		"Arkansas": "AR",
+		"California": "CA",
+		"Colorado": "CO",
+		"Connecticut": "CT",
+		"Deleware": "DE",
+		"Florida": "FL",
+		"Georgia": "GA",
+		"Hawaii": "HI",
+		"Idaho": "IH",
+		"Illinois": "IL",
+		"Indiana": "IN",
+		"Iowa": "IA",
+		"Kansas": "KS",
+		"Kentucky": "KY",
+		"Louisiana": "LA",
+		"Maine": "ME",
+		"Maryland": "MD",
+		"Massachusetts": "MA",
+		"Michigan": "MI",
+		"Minnesota": "MN",
+		"Mississippi": "MS",
+		"Missouri": "MO",
+		"Montana": "MT",
+		"Nebraska": "NE",
+		"Nevada": "NV",
+		"New Hampshire": "NH",
+		"New Jersey": "NJ",
+		"New Mexico": "NM",
+		"New York": "NY",
+		"North Carolina": "NC",
+		"North Dakota": "ND",
+		"Ohio": "OH",
+		"Oklahoma": "OK",
+		"Oregon": "OR",
+		"Pennsylvania": "PA",
+		"Rhode Island": "RI",
+		"South Carolina": "SC",
+		"South Dakota": "SD",
+		"Tennessee": "TN",
+		"Texas": "TX",
+		"Utah": "UT",
+		"Vermont": "VT",
+		"Virginia": "VA",
+		"Washington": "WA",
+		"West Virginia": "WV",
+		"Wisconsin": "WI",
+		"Wyoming": "WY"
+	}
+
+	try:
+		return state_dict[state_name]
+	except KeyError:
+		#state name not in dict; DC or some armed forces stuff. screw it they live in texas now.
+		#//TODO: don't be this retarded
+		return "TX"
+
+
 
 @csrf_exempt
 def lead_creation_api_endpoint_1_0(request):
@@ -86,6 +154,9 @@ def lead_creation_api_endpoint_1_0(request):
 	if request.method != "POST":
 		return HttpResponse("Method Not Allowed", status=405) #method not allowed
 	else:
+		#fix our state data
+		abbreviated_personal_state = state_to_abbreviation(request.POST.get('personal_state',''))
+		abbreviated_business_state = state_to_abbreviation(request.POST.get('business_state', ''))
 		#Instantiate a blank lead object and populate it with data from the various stuff we get via POST
 		newlead = Lead(
 			first_name = request.POST.get('first_name', ''),
@@ -97,12 +168,12 @@ def lead_creation_api_endpoint_1_0(request):
 			personal_address = request.POST.get('personal_address', ''),
 			personal_address_2 = request.POST.get('personal_address_2', ''),
 			personal_city = request.POST.get('personal_city', ''),
-			personal_state = request.POST.get('personal_state', ''),
+			personal_state = abbreviated_personal_state,
 			personal_zip = request.POST.get('personal_zip', ''),
 			business_address = request.POST.get('business_address', ''),
 			business_address_2 = request.POST.get('business_address_2', ''),
 			business_city = request.POST.get('business_city', ''),
-			business_state = request.POST.get('business_state', ''),
+			business_state = abbreviated_business_state,
 			business_zip = request.POST.get('business_zip', ''),
 			fax_number = request.POST.get('fax_number', ''), 	
 			industry = request.POST.get('industry', ''),

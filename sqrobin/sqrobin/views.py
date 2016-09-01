@@ -14,7 +14,7 @@ def register(request):
 			u = form.save()
 			d = Distributor.objects.create(user=u)
 			messages.add_message(request, messages.SUCCESS, "User Created!")
-			return redirect("register") #//TODO: redirect to lead list view
+			return redirect("leads:leadlist") #//TODO: redirect to lead list view
 	else:
 		form = UserCreationForm()
 	return render(request, "register.html", {'form':form})
