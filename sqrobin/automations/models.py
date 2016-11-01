@@ -1,6 +1,7 @@
 from django.db import models
 import json
 import uuid
+from sqrobin import config
 from profiles.models import Distributor
 import requests
 import sendgrid
@@ -87,7 +88,7 @@ class EmailAutomation(models.Model):
 
 
 		#create sendgrid message object & auth thing
-		key = "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" #TODO: swap account
+		key = config.sg_key
 		sg = sendgrid.SendGridClient(key)
 		message = sendgrid.Mail()
 		
