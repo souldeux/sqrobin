@@ -85,7 +85,7 @@ def state_to_abbreviation(state_name):
 		"Florida": "FL",
 		"Georgia": "GA",
 		"Hawaii": "HI",
-		"Idaho": "IH",
+		"Idaho": "ID",
 		"Illinois": "IL",
 		"Indiana": "IN",
 		"Iowa": "IA",
